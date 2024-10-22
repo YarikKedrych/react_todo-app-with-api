@@ -6,7 +6,7 @@ import { UpdateTodo } from '../types/Updates';
 interface Props {
   todos: Todo[];
   onDelete: (todoId: number) => void;
-  updateTodo: ({ id, newData }: UpdateTodo) => void;
+  updateTodo: ({ id, newData }: UpdateTodo) => Promise<void>;
   todoLoadingStates: { [key: number]: boolean };
 }
 

@@ -1,3 +1,4 @@
+/* eslint-disable no-console */
 /* eslint-disable jsx-a11y/label-has-associated-control */
 import { useState, useEffect, useRef } from 'react';
 import { Todo } from '../types/Todo';
@@ -8,7 +9,7 @@ import { FilterType } from '../enum/filterTypes';
 interface Props {
   todo: Todo;
   onDelete: (todoId: number) => void;
-  updateTodo: ({ id, newData }: UpdateTodo) => void;
+  updateTodo: ({ id, newData }: UpdateTodo) => Promise<void>;
   todoLoadingStates: { [key: number]: boolean };
 }
 
@@ -23,6 +24,8 @@ export const TodoItem: React.FC<Props> = ({
 
   const [isEditing, setIsEditing] = useState<boolean>(false);
   const [newTitle, setNewTitle] = useState<string>(title);
+  const [hasError, setHasError] = useState<boolean>(false);
+
   const inputRef = useRef<HTMLInputElement | null>(null);
   const containerRef = useRef<HTMLDivElement | null>(null);
 
@@ -30,24 +33,35 @@ export const TodoItem: React.FC<Props> = ({
 
   const handleDoubleClick = () => {
     setIsEditing(true);
+    setHasError(false);
   };
 
   const handleChange = (event: React.ChangeEvent<HTMLInputElement>) => {
     setNewTitle(event.target.value);
   };
 
-  const handleSubmit = () => {
-    if (trimmedTitle) {
-      updateTodo({ id, newData: trimmedTitle, keyValue: 'title' });
+  const handleSubmit = async () => {
+    if (trimmedTitle === title) {
+      console.log('Title did not change');
+      setIsEditing(false);
+
+      return;
+    } else if (trimmedTitle.length > 0) {
+      try {
+        await updateTodo({ id, newData: trimmedTitle, keyValue: 'title' });
+        setIsEditing(false);
+      } catch (error) {
+        setHasError(true);
+        console.error('Failed to update todo:', error);
+      }
     } else {
       onDelete(id);
     }
-
-    setIsEditing(false);
   };
 
   const handleKeyDown = (event: React.KeyboardEvent<HTMLInputElement>) => {
     if (event.key === 'Enter') {
+      event.preventDefault();
       handleSubmit();
     } else if (event.key === 'Escape') {
       setIsEditing(false);
@@ -79,11 +93,17 @@ export const TodoItem: React.FC<Props> = ({
     };
   }, [title]);
 
+  const handleBlur = () => {
+    if (isEditing) {
+      handleSubmit();
+    }
+  };
+
   return (
     <div
       ref={containerRef}
       data-cy="Todo"
-      className={classNames('todo', { completed })}
+      className={classNames('todo', { completed: !!completed })}
     >
       <label className="todo__status-label">
         <input
@@ -111,8 +131,14 @@ export const TodoItem: React.FC<Props> = ({
             value={newTitle}
             onChange={handleChange}
             onKeyDown={handleKeyDown}
-            ref={inputRef} // Прив'язка рефу до поля введення
+            onBlur={handleBlur}
+            ref={inputRef}
           />
+          {hasError && (
+            <div className="error-message" data-cy="TodoError">
+              Failed to update. Please try again.
+            </div>
+          )}
         </form>
       ) : (
         <>

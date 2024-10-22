@@ -1,3 +1,4 @@
+/* eslint-disable no-console */
 /* eslint-disable jsx-a11y/label-has-associated-control */
 /* eslint-disable jsx-a11y/control-has-associated-label */
 import React, { useEffect, useRef, useState } from 'react';
@@ -12,11 +13,12 @@ import { getFilteredTodos } from './helpers';
 import { FilterType } from './enum/filterTypes';
 import { ErrorMessages } from './enum/ErrorMassages';
 import { TodoItem } from './components/TodoItem';
+
 export const App: React.FC = () => {
   const { Load, Add, Delete, Update, None } = ErrorMessages;
 
   const [todos, setTodos] = useState<Todo[]>([]);
-  const [errorMessage, setErrorMassage] = useState(ErrorMessages.None);
+  const [errorMessage, setErrorMessage] = useState(ErrorMessages.None);
   const [isLoading, setIsLoading] = useState(false);
   const [tempTodo, setTempTodo] = useState<Todo | null>(null);
   const [filter, setFilter] = useState(FilterType.All);
@@ -30,10 +32,10 @@ export const App: React.FC = () => {
 
   const errorTimerId = useRef(0);
   const showError = (message: ErrorMessages) => {
-    setErrorMassage(message);
+    setErrorMessage(message);
     window.clearTimeout(errorTimerId.current);
     errorTimerId.current = window.setTimeout(() => {
-      setErrorMassage(None);
+      setErrorMessage(None);
     }, 3000);
   };
 
@@ -91,7 +93,9 @@ export const App: React.FC = () => {
       throw error;
     } finally {
       setTodoLoading(todoId, false);
-      inputRef.current?.focus();
+      if (inputRef.current) {
+        inputRef.current.focus();
+      }
     }
   };
 
@@ -101,7 +105,6 @@ export const App: React.FC = () => {
       await todoService.updateTodo(id, {
         [keyValue]: newData,
       });
-
       setTodos(prev =>
         prev.map(currentTodo =>
           id === currentTodo.id
@@ -111,7 +114,7 @@ export const App: React.FC = () => {
       );
     } catch (error) {
       showError(Update);
-      throw error;
+      console.error('Error occurred while updating:', error);
     } finally {
       setTodoLoading(id, false);
     }
@@ -155,7 +158,6 @@ export const App: React.FC = () => {
           updateTodo={updateTodo}
           todos={displayedTodos}
           onDelete={onDelete}
-          // inputRef={inputRef}
         />
 
         {tempTodo && (
@@ -164,7 +166,6 @@ export const App: React.FC = () => {
               todoLoadingStates={{ 0: true }}
               updateTodo={updateTodo}
               onDelete={onDelete}
-              // inputRef={inputRef}
               todo={tempTodo}
             />
           </div>
@@ -183,7 +184,7 @@ export const App: React.FC = () => {
       <ErrorBox
         errorMessage={errorMessage}
         onClearError={() => {
-          setErrorMassage(None);
+          setErrorMessage(None);
         }}
       />
     </div>
