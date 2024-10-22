@@ -136,7 +136,7 @@ export const TodoItem: React.FC<Props> = ({
           />
           {hasError && (
             <div className="error-message" data-cy="TodoError">
-              Failed to update. Please try again.
+              Failed to update. Please try again!
             </div>
           )}
         </form>
